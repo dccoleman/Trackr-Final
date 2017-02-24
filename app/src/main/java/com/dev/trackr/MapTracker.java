@@ -40,9 +40,11 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
 
     private LocationRequest mLocationRequest;
 
-    private List<LatLng> points;
+    private List<Location> points;
 
     private Location mCurrentLocation;
+
+    private static final float LOCATION_RADIUS = 10;
 
     @Override
     protected void onResume() {
@@ -89,10 +91,6 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
             mMap.setMyLocationEnabled(true);
         } catch(SecurityException e) {
             Log.d("Location", e.toString());
-        }
-
-        if(checkLocationPermission()) {
-
         }
     }
 
@@ -168,6 +166,8 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
             } else {
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),location.getLongitude()), 17));
             }
+
+            LocationServices.FusedLocationApi.requestLocationUpdates(mApiClient, mLocationRequest, this);
         }
     }
 
@@ -183,13 +183,13 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
 
     @Override
     public void onLocationChanged(Location location) {
-        LatLng ll = new LatLng(location.getLatitude(), location.getLongitude());
+        mCurrentLocation = location;
 
-        points.add(ll);
+        points.add(location);
 
-        Log.d("Location Update", ll.toString());
+        Log.d("Location Update", location.toString());
 
-        Toast.makeText(this, "Location Updated", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Location Updated", Toast.LENGTH_SHORT).show();
 
         redrawLine();
     }
@@ -198,10 +198,18 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
 
         mMap.clear();  //clears all Markers and Polylines
 
-        PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
+        Location prevPoint = null;
+
+        PolylineOptions options = new PolylineOptions().width(10).color(Color.BLUE).geodesic(true);
         for (int i = 0; i < points.size(); i++) {
-            LatLng point = points.get(i);
-            options.add(point);
+            Location place = points.get(i);
+
+            options.add(new LatLng(place.getLatitude(),place.getLongitude()));
+            /*if(prevPoint == null) {
+                prevPoint = place;
+            } else if(prevPoint.distanceTo(place) > LOCATION_RADIUS) {
+            Filter by picture location, not line
+            }*/
         }
         addMarker(); //add Marker in current position
         mMap.addPolyline(options); //add Polyline
@@ -212,11 +220,11 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
 
         LatLng currentLatLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
         options.position(currentLatLng);
-        Marker mapMarker = mMap.addMarker(options);
+        /*Marker mapMarker = mMap.addMarker(options);
         mapMarker.setTitle("Hello");
 
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng,
-                13));
+                13));*/
     }
 
 }
