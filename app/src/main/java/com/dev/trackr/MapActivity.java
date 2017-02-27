@@ -1,6 +1,10 @@
 package com.dev.trackr;
 
 import android.*;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -10,18 +14,24 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.ActivityRecognitionResult;
+import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -31,33 +41,16 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class MapTracker extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
 
-    private GoogleApiClient mApiClient;
-
-    private LocationRequest mLocationRequest;
-
     private List<Location> points;
 
-    private Location mCurrentLocation;
-
-    private static final float LOCATION_RADIUS = 10;
-
-    @Override
-    protected void onResume() {
-        Toast.makeText(this, "Creating API client", Toast.LENGTH_LONG).show();
-        mApiClient.connect();
-        super.onStart();
-    }
-
-    @Override
-    protected void onPause() {
-        mApiClient.disconnect();
-        super.onStop();
-    }
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    private static final String TAG = "Maps Activity++++";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,16 +63,16 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
 
         points = new ArrayList<>();
 
-        Log.d("Points size", points.toString());
+        requestLocationPermission();
 
-        checkLocationPermission();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(TrackerService.REQUEST_LOCATION_PERMISSION);
+        filter.addAction(TrackerService.UPDATE_LOCATION);
+        LocalBroadcastManager bm = LocalBroadcastManager.getInstance(this);
+        bm.registerReceiver(mBroadcastReceiver, filter);
 
-        mApiClient = buildGoogleAPIClient();
-
-        mLocationRequest = new LocationRequest()
-                .setInterval(5000)
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setFastestInterval(5000);
+        Intent serviceIntent = new Intent(MapActivity.this, TrackerService.class);
+        startService(serviceIntent);
     }
 
     @Override
@@ -87,20 +80,46 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
         mMap = googleMap;
 
         try{
-            Log.d("Perms", "Permission to locate");
+            Log.d(TAG, "Location permissions acquired");
             mMap.setMyLocationEnabled(true);
         } catch(SecurityException e) {
-            Log.d("Location", e.toString());
+            Log.d(TAG, "No location permissions");
         }
+
+        mMap.getUiSettings().setScrollGesturesEnabled(false);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setZoomGesturesEnabled(false);
     }
 
-    //* simply checks for the ability to access location and requests permission to do so
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
-    public boolean checkLocationPermission(){
-        if (ContextCompat.checkSelfPermission(this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+    //* handler for messages sent from the service
+    private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
 
+            switch(intent.getAction()) {
+                case TrackerService.REQUEST_LOCATION_PERMISSION:
+                    Log.d(TAG,"Permission request from service");
+                    requestLocationPermission();
+                    break;
+
+                case TrackerService.UPDATE_LOCATION:
+                    Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
+                    if(loc != null) {
+                        Log.d(TAG, "Location update from service: " + loc.toString());
+                        points.add(loc);
+                        redrawLine();
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
+                    }
+                    break;
+
+                default:
+                    Log.d(TAG, "Unrecognized Intent");
+            }
+        }
+    };
+
+    public void requestLocationPermission() {
+        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     android.Manifest.permission.ACCESS_FINE_LOCATION)) {
 
@@ -114,12 +133,7 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
                         new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
             }
-            return false;
-        } else {
-            return true;
         }
-
-
     }
 
     //* this is called when the permissions request is answered
@@ -133,10 +147,7 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
                     if (ContextCompat.checkSelfPermission(this,
                             android.Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-
-                        if (mApiClient == null) {
-                            mApiClient = buildGoogleAPIClient();
-                        }
+                        //* Create service here
                     }
 
                 } else {
@@ -145,53 +156,6 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
                 return;
             }
         }
-    }
-
-    //* builds the google api client needed to access the services
-    private GoogleApiClient buildGoogleAPIClient() {
-        return new GoogleApiClient.Builder(this)
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
-
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        if(checkLocationPermission()) {
-            Location location = LocationServices.FusedLocationApi.getLastLocation(mApiClient);
-            if(location == null) {
-
-            } else {
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),location.getLongitude()), 17));
-            }
-
-            LocationServices.FusedLocationApi.requestLocationUpdates(mApiClient, mLocationRequest, this);
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
-
-        points.add(location);
-
-        Log.d("Location Update", location.toString());
-
-        Toast.makeText(this, "Location Updated", Toast.LENGTH_SHORT).show();
-
-        redrawLine();
     }
 
     private void redrawLine(){
@@ -211,20 +175,6 @@ public class MapTracker extends FragmentActivity implements OnMapReadyCallback, 
             Filter by picture location, not line
             }*/
         }
-        addMarker(); //add Marker in current position
         mMap.addPolyline(options); //add Polyline
     }
-
-    private void addMarker() {
-        MarkerOptions options = new MarkerOptions();
-
-        LatLng currentLatLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-        options.position(currentLatLng);
-        /*Marker mapMarker = mMap.addMarker(options);
-        mapMarker.setTitle("Hello");
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng,
-                13));*/
-    }
-
 }
