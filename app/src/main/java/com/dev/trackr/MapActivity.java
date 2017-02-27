@@ -35,7 +35,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     private GoogleMap mMap;
 
-    private List<Location> points;
+    private ArrayList<Location> points;
 
     private static boolean databaseEnabled = false;
 
@@ -48,6 +48,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     //private static final String UUID = "067e6162-3b6f-4ae2-a171-2470b63dff00";
     private static final String UUID = "167e6162-3b6f-4ae2-a171-2470b63dff00";
+    private static final String STORED_POINTS = "storedPoints";
+    private static final float LOCATION_RADIUS = 5;
+
+    private static Location mLastLocation = null;
 
 
     @Override
@@ -62,7 +66,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        points = new ArrayList<>();
+        if(savedInstanceState == null) {
+            points = new ArrayList<>();
+        } else {
+            points = savedInstanceState.getParcelableArrayList(STORED_POINTS);
+        }
+
 
         //requestLocationPermission();
         requestFilePermission();
@@ -86,6 +95,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
             public void onClick(View v) {
                 SugarRecord.executeQuery("DROP TABLE POINTS");
                 SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
+                points.clear();
                 redrawLine();
             }
         });
@@ -101,20 +111,20 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     }
 
     @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putParcelableArrayList(STORED_POINTS, points);
+
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
     }
 
     @Override
     public void onResume() {
-        if(databaseEnabled) {
-            points.clear();
-            List<Points> p = Points.find(Points.class, "UUID = ?", UUID);
-            Log.d(TAG,"Found " + p.size() + " points for UUID " + UUID);
-            for (Points x : p) {
-                points.add(pointsToLocation(x));
-            }
-        }
+        redrawLine();
         super.onResume();
     }
 
@@ -125,15 +135,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         try{
             mMap.setMyLocationEnabled(true);
         } catch(SecurityException e) {
-            Log.d(TAG, "No location permissions");
+            Log.e(TAG, "No location permissions");
+            return;
         }
 
         mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(false);
 
-        Log.d(TAG,"MAP READY");
         redrawLine();
+
+        Log.v(TAG,"Map Ready");
     }
 
     //* handler for messages sent from the service
@@ -143,38 +155,37 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
             switch(intent.getAction()) {
                 case TrackerService.REQUEST_LOCATION_PERMISSION:
-                    Log.d(TAG,"Permission request from service");
+                    Log.v(TAG,"Permission request from service");
                     requestLocationPermission();
                     break;
 
                 case TrackerService.UPDATE_LOCATION:
                     Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
+
                     if(loc != null) {
-                        Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
-                        p.save();
+                        if (mLastLocation == null || loc.distanceTo(mLastLocation) > LOCATION_RADIUS) {
+                            Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
+                            p.save();
 
-                        Log.d(TAG, "Location update from service: " + loc.toString());
-                        points.add(loc);
-                        redrawLine();
-                        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
+                            Log.v(TAG, "Location update from service: " + loc.toString());
+                            points.add(loc);
+                            redrawLine();
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
 
-                        databaseEnabled = true;
+                            databaseEnabled = true;
+
+                            mLastLocation = loc;
+                        } else {
+                            Log.v(TAG, "Location is within " + LOCATION_RADIUS + " meters of last location. Will be ignored.");
+                        }
                     }
                     break;
 
                 default:
-                    Log.d(TAG, "Unrecognized Intent");
+                    Log.e(TAG, "Unrecognized Intent");
             }
         }
     };
-
-    public Location pointsToLocation(Points p) {
-        Location loc = new Location("");
-        loc.setLatitude(p.getLat());
-        loc.setLongitude(p.getLng());
-        loc.setTime(p.getTime());
-        return loc;
-    }
 
     public void requestLocationPermission() {
         if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -217,7 +228,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                     }
 
                 } else {
-                    Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show();
+                    Log.e(TAG,"Location Permissions Denied");
                 }
                 return;
             }
@@ -226,32 +237,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     private void redrawLine(){
         if(mMap != null) {
-            mMap.clear();  //clears all Markers and Polylines
-
-            Location prevPoint = null;
 
             PolylineOptions options = new PolylineOptions().width(10).color(Color.BLUE).geodesic(true);
             for (int i = 0; i < points.size(); i++) {
                 Location place = points.get(i);
-
                 options.add(new LatLng(place.getLatitude(), place.getLongitude()));
-                /*if(prevPoint == null) {
-                    prevPoint = place;
-                } else if(prevPoint.distanceTo(place) > LOCATION_RADIUS) {
-                Filter by picture location, not line
-                }*/
             }
-            mMap.addPolyline(options); //add Polyline
+            mMap.addPolyline(options);
         }
-    }
-
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 }
