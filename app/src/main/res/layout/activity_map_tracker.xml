@@ -1,4 +1,4 @@
-<RelativeLayout
+<RelativeLayout xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:android="http://schemas.android.com/apk/res/android">
@@ -14,19 +14,29 @@
         map:cameraZoom="17"/>
 
     <Button
-        android:id="@+id/resetPath"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal|center_vertical"
-        android:text="Reset Path"
-        android:layout_alignParentTop="true" />
-
-    <Button
         android:id="@+id/takePicture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_toEndOf="@+id/resetPath"
         android:text="Add Picture"/>
+
+    <Button
+        android:text="Back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button2"
+        tools:text="Back"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:id="@+id/resetPath"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal|center_vertical"
+        android:text="Reset Path"
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/button2" />
 
 </RelativeLayout>
