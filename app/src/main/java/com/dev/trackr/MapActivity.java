@@ -24,18 +24,20 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.orm.SugarContext;
 import com.orm.SugarRecord;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
 
     private ArrayList<Location> points;
+
+    private ArrayList<MarkerOptions> markers;
 
     private static boolean databaseEnabled = false;
 
@@ -90,7 +92,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         mServiceIntent = new Intent(MapActivity.this, TrackerService.class);
         startService(mServiceIntent);
 
-        Button buttonOne = (Button) findViewById(R.id.setScrollable);
+        Button buttonOne = (Button) findViewById(R.id.resetPath);
         buttonOne.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
                 SugarRecord.executeQuery("DROP TABLE POINTS");
@@ -99,6 +101,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 redrawLine();
             }
         });
+
+        markers = new ArrayList<>();
     }
 
     @Override
@@ -144,6 +148,29 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         mMap.getUiSettings().setZoomGesturesEnabled(false);
 
         redrawLine();
+
+        Button buttonOne = (Button) findViewById(R.id.takePicture);
+        buttonOne.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+
+                for(MarkerOptions m : markers) {
+                    Location pos = new Location("");
+                    pos.setLatitude(m.getPosition().latitude);
+                    pos.setLongitude(m.getPosition().longitude);
+                    if(mLastLocation.distanceTo(pos) < LOCATION_RADIUS) {
+                        Toast.makeText(getApplicationContext(),"Adding to current gallery",Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                MarkerOptions marker = new MarkerOptions()
+                        .position(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()))
+                        .title("PLACE ME");
+                if (mLastLocation != null) {
+                    mMap.addMarker(marker);
+                    markers.add(marker);
+                }
+            }
+        });
 
         Log.v(TAG,"Map Ready");
     }
