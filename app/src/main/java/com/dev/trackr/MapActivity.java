@@ -120,8 +120,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                     Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
                     if(loc != null) {
                         Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
-                        p.toString();
-                        p.save();
+                        Log.d(TAG,p.toString());
+                        //p.save();
 
                         Log.d(TAG, "Location update from service: " + loc.toString());
                         points.add(loc);
