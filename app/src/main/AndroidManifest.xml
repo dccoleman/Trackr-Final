@@ -30,9 +30,18 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
+
+
         <activity
             android:name=".MapActivity"
             android:label="@string/title_activity_map_tracker">
+
+        </activity>
+
+        <activity
+            android:name=".main_menu_activity"
+            android:label="@string/title_activity_main_menu_activity"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -69,10 +78,6 @@
             android:name=".view_location_activity"
             android:label="@string/title_activity_view_location_activity"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".main_menu_activity"
-            android:label="@string/title_activity_main_menu_activity"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>
