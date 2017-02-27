@@ -33,7 +33,7 @@ public class TrackerService extends IntentService implements GoogleApiClient.Con
     public static final String TAG = "TrackerService----";
 
     //* A variable for the api client, passed from the activity
-    private GoogleApiClient mApiClient;
+    private static GoogleApiClient mApiClient;
 
     //* A variable for the location request
     private LocationRequest mLocationRequest;
@@ -65,7 +65,13 @@ public class TrackerService extends IntentService implements GoogleApiClient.Con
 
         Log.d(TAG,"Service Started");
 
-        return super.onStartCommand(intent,flags,startId);
+        return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "Service stopping");
+        //LocationServices.FusedLocationApi.removeLocationUpdates(mApiClient,this);
     }
 
     //* sending the intent to the activity to alter the ui
@@ -99,7 +105,7 @@ public class TrackerService extends IntentService implements GoogleApiClient.Con
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        if(checkLocationPermission()) {
+        if (checkLocationPermission()) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mApiClient, mLocationRequest, this);
         } else {
             requestLocationPermission();

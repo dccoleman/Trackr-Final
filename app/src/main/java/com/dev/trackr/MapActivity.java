@@ -1,5 +1,7 @@
 package com.dev.trackr;
 
+import android.Manifest;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +15,8 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -22,6 +26,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.orm.SugarContext;
+import com.orm.SugarRecord;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,17 +39,22 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     private static boolean databaseEnabled = false;
 
+    private static Intent mServiceIntent;
+
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    public static final int MY_PERMISSIONS_REQUEST_FILES = 100;
+
     private static final String TAG = "Maps Activity++++";
 
-    private static final String UUID = "067e6162-3b6f-4ae2-a171-2470b63dff00";
+    //private static final String UUID = "067e6162-3b6f-4ae2-a171-2470b63dff00";
+    private static final String UUID = "167e6162-3b6f-4ae2-a171-2470b63dff00";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         SugarContext.init(getApplicationContext());
-        SugarContext.getSugarContext();
 
         setContentView(R.layout.activity_map_tracker);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -55,6 +65,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         points = new ArrayList<>();
 
         //requestLocationPermission();
+        requestFilePermission();
+
+        //* Create database
+        SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
+
+        redrawLine();
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(TrackerService.REQUEST_LOCATION_PERMISSION);
@@ -62,13 +78,25 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         LocalBroadcastManager bm = LocalBroadcastManager.getInstance(this);
         bm.registerReceiver(mBroadcastReceiver, filter);
 
-        Intent serviceIntent = new Intent(MapActivity.this, TrackerService.class);
-        startService(serviceIntent);
+        mServiceIntent = new Intent(MapActivity.this, TrackerService.class);
+        startService(mServiceIntent);
+
+        Button buttonOne = (Button) findViewById(R.id.setScrollable);
+        buttonOne.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                SugarRecord.executeQuery("DROP TABLE POINTS");
+                SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
+                redrawLine();
+            }
+        });
     }
 
     @Override
     public void onDestroy() {
+        stopService(mServiceIntent);
         SugarContext.terminate();
+        LocalBroadcastManager bm = LocalBroadcastManager.getInstance(this);
+        bm.unregisterReceiver(mBroadcastReceiver);
         super.onDestroy();
     }
 
@@ -81,11 +109,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     public void onResume() {
         if(databaseEnabled) {
             points.clear();
-            List<Points> p = Points.listAll(Points.class);
+            List<Points> p = Points.find(Points.class, "UUID = ?", UUID);
+            Log.d(TAG,"Found " + p.size() + " points for UUID " + UUID);
             for (Points x : p) {
                 points.add(pointsToLocation(x));
             }
-            redrawLine();
         }
         super.onResume();
     }
@@ -103,6 +131,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(false);
+
+        Log.d(TAG,"MAP READY");
+        redrawLine();
     }
 
     //* handler for messages sent from the service
@@ -120,8 +151,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                     Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
                     if(loc != null) {
                         Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
-                        Log.d(TAG,p.toString());
-                        //p.save();
+                        p.save();
 
                         Log.d(TAG, "Location update from service: " + loc.toString());
                         points.add(loc);
@@ -164,6 +194,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         }
     }
 
+    public void requestFilePermission() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_FILES);
+        }
+    }
+
     //* this is called when the permissions request is answered
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -187,22 +225,33 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     }
 
     private void redrawLine(){
+        if(mMap != null) {
+            mMap.clear();  //clears all Markers and Polylines
 
-        mMap.clear();  //clears all Markers and Polylines
+            Location prevPoint = null;
 
-        Location prevPoint = null;
+            PolylineOptions options = new PolylineOptions().width(10).color(Color.BLUE).geodesic(true);
+            for (int i = 0; i < points.size(); i++) {
+                Location place = points.get(i);
 
-        PolylineOptions options = new PolylineOptions().width(10).color(Color.BLUE).geodesic(true);
-        for (int i = 0; i < points.size(); i++) {
-            Location place = points.get(i);
-
-            options.add(new LatLng(place.getLatitude(),place.getLongitude()));
-            /*if(prevPoint == null) {
-                prevPoint = place;
-            } else if(prevPoint.distanceTo(place) > LOCATION_RADIUS) {
-            Filter by picture location, not line
-            }*/
+                options.add(new LatLng(place.getLatitude(), place.getLongitude()));
+                /*if(prevPoint == null) {
+                    prevPoint = place;
+                } else if(prevPoint.distanceTo(place) > LOCATION_RADIUS) {
+                Filter by picture location, not line
+                }*/
+            }
+            mMap.addPolyline(options); //add Polyline
         }
-        mMap.addPolyline(options); //add Polyline
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

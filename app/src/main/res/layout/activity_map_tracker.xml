@@ -12,16 +12,13 @@
         android:layout_height="match_parent"
         tools:context="com.dev.trackr.MapActivity"
         map:cameraZoom="17"/>
-<!--
-    <CheckedTextView
+
+    <Button
         android:id="@+id/setScrollable"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textOff="Disable Dragging"
-        android:textOn="Enable Dragging"
-        android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
-        android:scaleX="2"
-        android:scaleY="2"/>-->
+        android:gravity="center_horizontal|center_vertical"
+        android:text="Reset Path"/>
 
 </RelativeLayout>
