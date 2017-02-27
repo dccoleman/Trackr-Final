@@ -31,6 +31,7 @@ import com.orm.SugarContext;
 import com.orm.SugarRecord;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -101,6 +102,16 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         startService(mServiceIntent);
 
         markers = new ArrayList<>();
+
+        Button backButton = (Button) findViewById(R.id.back);
+        backButton.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), MainMenuActivity.class);
+                stopService(mServiceIntent);
+                startActivity(intent);
+
+            }
+        });
     }
 
     @Override
