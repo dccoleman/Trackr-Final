@@ -26,6 +26,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.orm.SugarContext;
 import com.orm.SugarRecord;
 
@@ -39,6 +40,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     private ArrayList<MarkerOptions> markers;
 
+    private ArrayList<Polyline> lines;
+
     private static boolean databaseEnabled = false;
 
     private static Intent mServiceIntent;
@@ -51,7 +54,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     //private static final String UUID = "067e6162-3b6f-4ae2-a171-2470b63dff00";
     private static final String UUID = "167e6162-3b6f-4ae2-a171-2470b63dff00";
     private static final String STORED_POINTS = "storedPoints";
-    private static final float LOCATION_RADIUS = 5;
+    private static final float LOCATION_RADIUS = 2;
 
     private static Location mLastLocation = null;
 
@@ -70,9 +73,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
         if(savedInstanceState == null) {
             points = new ArrayList<>();
+            lines = new ArrayList<>();
+            markers = new ArrayList<>();
         } else {
             points = savedInstanceState.getParcelableArrayList(STORED_POINTS);
         }
+
+        lines = new ArrayList<>();
+        markers = new ArrayList<>();
 
 
         //requestLocationPermission();
@@ -91,16 +99,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
         mServiceIntent = new Intent(MapActivity.this, TrackerService.class);
         startService(mServiceIntent);
-
-        Button buttonOne = (Button) findViewById(R.id.resetPath);
-        buttonOne.setOnClickListener(new Button.OnClickListener() {
-            public void onClick(View v) {
-                SugarRecord.executeQuery("DROP TABLE POINTS");
-                SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
-                points.clear();
-                redrawLine();
-            }
-        });
 
         markers = new ArrayList<>();
     }
@@ -169,6 +167,16 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                     mMap.addMarker(marker);
                     markers.add(marker);
                 }
+            }
+        });
+
+        buttonOne = (Button) findViewById(R.id.resetPath);
+        buttonOne.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                SugarRecord.executeQuery("DROP TABLE POINTS");
+                SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
+                points.clear();
+                redrawLine();
             }
         });
 
@@ -264,13 +272,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     private void redrawLine(){
         if(mMap != null) {
+            for(Polyline p : lines) {
+                p.remove();
+            }
+            lines.clear();
 
             PolylineOptions options = new PolylineOptions().width(10).color(Color.BLUE).geodesic(true);
             for (int i = 0; i < points.size(); i++) {
                 Location place = points.get(i);
                 options.add(new LatLng(place.getLatitude(), place.getLongitude()));
             }
-            mMap.addPolyline(options);
+            lines.add(mMap.addPolyline(options));
         }
     }
 }
