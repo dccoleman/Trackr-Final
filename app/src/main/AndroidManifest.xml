@@ -39,15 +39,26 @@
         </activity>
 
         <activity
-            android:name=".main_menu_activity"
+            android:name=".MainMenuActivity"
             android:label="@string/title_activity_main_menu_activity"
             android:theme="@style/AppTheme.NoActionBar">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".base_menu_activity"
+            android:label="@string/title_activity_base_menu_activity"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity
+            android:name=".view_location_activity"
+            android:label="@string/title_activity_view_location_activity"
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <service android:name=".TrackerService" />
 
@@ -64,20 +75,6 @@
             android:name="DOMAIN_PACKAGE_NAME"
             android:value="com.dev.trackr" />
 
-        <activity
-            android:name=".base_menu_activity"
-            android:label="@string/title_activity_base_menu_activity"
-            android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".view_location_activity"
-            android:label="@string/title_activity_view_location_activity"
-            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>
