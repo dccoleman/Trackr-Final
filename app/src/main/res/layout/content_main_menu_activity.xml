@@ -13,15 +13,6 @@
     tools:context="com.dev.trackr.main_menu_activity"
     tools:showIn="@layout/activity_main_menu_activity">
 
-    <Button
-        android:text="Create"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_alignParentEnd="true"
-        android:id="@+id/button4"
-        tools:text="Create" />
-
     <ListView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -36,16 +27,18 @@
         android:text="New Adventure"
         android:ems="10"
         android:id="@+id/editText"
-        android:layout_alignTop="@+id/button4"
-        android:layout_alignParentStart="true"
-        tools:text="New Adventure" />
+        tools:text="New Adventure"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
 
     <Button
-        android:text="back"
+        android:text="Create"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/button3"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        tools:text="Back" />
+        android:id="@+id/button4"
+        tools:text="Create"
+        android:layout_alignBaseline="@+id/editText"
+        android:layout_alignBottom="@+id/editText"
+        android:layout_alignParentEnd="true" />
+
 </RelativeLayout>
