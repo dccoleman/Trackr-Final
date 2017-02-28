@@ -1,4 +1,4 @@
-package com.dev.trackr;
+package com.dev.trackr.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -17,7 +17,7 @@ import android.widget.ImageView;
 import java.io.File;
 import java.util.ArrayList;
 
-public class ImageAdapter extends BaseAdapter {
+public class PhotoAdapter extends BaseAdapter {
     private Context mContext;
     private ArrayList<Bitmap> files;
 
@@ -25,7 +25,7 @@ public class ImageAdapter extends BaseAdapter {
 
     private static final int PICTURE_SIZE = 1000;
 
-    public ImageAdapter(Context c, ArrayList<File> files) {
+    public PhotoAdapter(Context c, ArrayList<File> files) {
         mContext = c;
         this.files = new ArrayList<>();
 

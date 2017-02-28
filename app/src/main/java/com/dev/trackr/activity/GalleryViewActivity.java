@@ -1,21 +1,17 @@
-package com.dev.trackr;
+package com.dev.trackr.activity;
 
-import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.GridView;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
+
+import com.dev.trackr.R;
+import com.dev.trackr.adapters.PhotoAdapter;
+import com.dev.trackr.dbSchema.PictureWrapper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -54,7 +50,7 @@ public class GalleryViewActivity extends AppCompatActivity {
 
         GridView g = (GridView) findViewById(R.id.gridView);
         g.setNumColumns(2);
-        g.setAdapter(new ImageAdapter(this, images));
+        g.setAdapter(new PhotoAdapter(this, images));
 
         g.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

@@ -31,10 +31,10 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".MapActivity"
+            android:name=".activity.MapActivity"
             android:label="@string/title_activity_map_tracker" />
         <activity
-            android:name=".MainMenuActivity"
+            android:name=".activity.MainMenuActivity"
             android:label="@string/title_activity_main_menu_activity"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -44,23 +44,23 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".TrackerService" />
+        <service android:name=".service.TrackerService" />
 
         <meta-data
             android:name="DATABASE"
             android:value="adventures.db" />
         <meta-data
             android:name="VERSION"
-            android:value="6" />
+            android:value="7" />
         <meta-data
             android:name="QUERY_LOG"
             android:value="true" />
         <meta-data
             android:name="DOMAIN_PACKAGE_NAME"
-            android:value="com.dev.trackr" />
+            android:value="com.dev.trackr.dbSchema" />
 
-        <activity android:name=".GalleryViewActivity" />
-        <activity android:name=".ImageViewActivity"></activity>
+        <activity android:name=".activity.GalleryViewActivity" />
+        <activity android:name=".activity.ImageViewActivity"></activity>
     </application>
 
 </manifest>

@@ -1,4 +1,4 @@
-package com.dev.trackr;
+package com.dev.trackr.dbSchema;
 
 import com.orm.SugarRecord;
 

@@ -1,31 +1,32 @@
-package com.dev.trackr;
+package com.dev.trackr.adapters;
 import android.content.Context;
 import android.os.Environment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.orm.SugarContext;
-import com.orm.SugarRecord;
+import com.dev.trackr.activity.MainMenuActivity;
+import com.dev.trackr.R;
+import com.dev.trackr.dbSchema.Adventure;
+import com.dev.trackr.dbSchema.MarkerWrapper;
+import com.dev.trackr.dbSchema.PersistVars;
+import com.dev.trackr.dbSchema.PictureWrapper;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CustomAdapter extends BaseAdapter {
+public class AdventureAdapter extends BaseAdapter {
     Context context;
     ArrayList<Adventure> adventures;
 
     private static LayoutInflater inflater=null;
-    public CustomAdapter(MainMenuActivity mainActivity) {
+    public AdventureAdapter(MainMenuActivity mainActivity) {
         adventures = new ArrayList<>();
         refreshView();
         context=mainActivity;

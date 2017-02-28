@@ -1,4 +1,4 @@
-package com.dev.trackr;
+package com.dev.trackr.service;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -32,7 +32,6 @@ public class TrackerService extends IntentService implements GoogleApiClient.Con
 
     public static final String TAG = "TrackerService----";
 
-    //* A variable for the api client, passed from the activity
     private static GoogleApiClient mApiClient;
 
     //* A variable for the location request
@@ -114,7 +113,6 @@ public class TrackerService extends IntentService implements GoogleApiClient.Con
     }
 
     //* simply checks for the ability to access location and requests permission to do so
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     public boolean checkLocationPermission(){
         return ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }

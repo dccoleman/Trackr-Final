@@ -1,18 +1,14 @@
-package com.dev.trackr;
+package com.dev.trackr.activity;
 
-import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.Picture;
 import android.location.Location;
 import android.net.Uri;
-import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -20,8 +16,15 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
+import com.dev.trackr.Constants;
+import com.dev.trackr.R;
+import com.dev.trackr.service.TrackerService;
+import com.dev.trackr.dbSchema.MarkerWrapper;
+import com.dev.trackr.dbSchema.PersistVars;
+import com.dev.trackr.dbSchema.PictureWrapper;
+import com.dev.trackr.dbSchema.Points;
+import com.dev.trackr.permissions.PermissionsManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -33,11 +36,11 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.Polyline;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+
+import static com.dev.trackr.Constants.Intents.REQUEST_PHOTO;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -51,22 +54,18 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private ArrayList<Marker> markers;
 
-    private static Intent mServiceIntent;
+    private PermissionsManager perms;
 
-    private static final int REQUEST_PHOTO = 0;
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
-    public static final int MY_PERMISSIONS_REQUEST_FILES = 100;
+    private static Intent mServiceIntent;
 
     private static final String TAG = "Maps Activity++++";
 
-    private static String UUID = "";
-    private static final String STORED_POINTS = "storedPoints";
-    public static final String LOCATION_NUMBER = "locationNumber";
-    public static final String LOCATION_UUID = "UUID";
-    private static final String FILE_DIR = Environment.getExternalStorageDirectory() + "/" + "Trackr/";
-    private static final float LOCATION_RADIUS = 1;
+    private static final int MAX_IGNORE_LOCATION_UPDATES = 2;
+
+    private static int mNumIgnores = MAX_IGNORE_LOCATION_UPDATES;
 
     private static Location mLastLocation = null;
+    private static String UUID = "";
 
 
     @Override
@@ -95,18 +94,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
             lines = new ArrayList<>();
         } else {
-            points = savedInstanceState.getParcelableArrayList(STORED_POINTS);
-            variables = PersistVars.find(PersistVars.class, "UUID = ?", UUID).get(0);
+            points = savedInstanceState.getParcelableArrayList(Constants.SavedInstanceStateAccessors.STORED_POINTS);
         }
+
+        perms = new PermissionsManager(this);
+
+        perms.requestPermissionsIfNecessary();
 
         lines = new ArrayList<>();
 
         markerMap = new HashMap<>();
         markers = new ArrayList<>();
-
-
-        //requestLocationPermission();
-        requestFilePermission();
 
         redrawMap();
 
@@ -150,7 +148,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putParcelableArrayList(STORED_POINTS, points);
+        savedInstanceState.putParcelableArrayList(Constants.SavedInstanceStateAccessors.STORED_POINTS, points);
         //savedInstanceState.putParcelableArrayList(STORED_LOCATIONS, locations);
 
         super.onSaveInstanceState(savedInstanceState);
@@ -200,7 +198,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                 Intent imageIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-                File imagesFolder = new File(FILE_DIR + UUID);
+                File imagesFolder = new File(Constants.FileSystem.FILE_DIR + UUID);
                 imagesFolder.mkdirs();
 
                 File image = new File(imagesFolder, variables.getPhotos() + ".png");
@@ -244,7 +242,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         pos.setLatitude(m.getPosition().latitude);
                         pos.setLongitude(m.getPosition().longitude);
 
-                        if (mLastLocation.distanceTo(pos) < LOCATION_RADIUS ) {
+                        if (mLastLocation.distanceTo(pos) < Constants.Location.LOCATION_RADIUS ) {
                             closeMarker = markerMap.get(new LatLng(pos.getLatitude(), pos.getLongitude()));
                             break;
                         }
@@ -297,15 +295,15 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
             switch(intent.getAction()) {
                 case TrackerService.REQUEST_LOCATION_PERMISSION:
-                    Log.v(TAG,"Permission request from service");
-                    requestLocationPermission();
+                    Log.e(TAG,"Permission request from service");
+                    perms.requestPermissionsIfNecessary();
                     break;
 
                 case TrackerService.UPDATE_LOCATION:
                     Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
 
                     if(loc != null) {
-                        if (mLastLocation == null || loc.distanceTo(mLastLocation) > LOCATION_RADIUS) {
+                        if (mLastLocation == null || loc.distanceTo(mLastLocation) > Constants.Location.LOCATION_RADIUS && loc.distanceTo(mLastLocation) < Constants.Location.LOCATION_OUTLIER) {
                             Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
                             p.save();
 
@@ -315,8 +313,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                             mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
 
                             mLastLocation = loc;
+
+                            mNumIgnores = 0;
                         } else {
-                            Log.v(TAG, "Location is within " + LOCATION_RADIUS + " meters of last location. Will be ignored.");
+                            Log.v(TAG, "Location is either within " + Constants.Location.LOCATION_RADIUS + " OR outside " + Constants.Location.LOCATION_OUTLIER + " meters. Will be ignored.");
+                            Log.v(TAG, "Location has been ignored " + mNumIgnores + " times. After " + MAX_IGNORE_LOCATION_UPDATES + " times the location will be accepted");
+                            mNumIgnores++;
                         }
                     }
                     break;
@@ -327,52 +329,37 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     };
 
-    public void requestLocationPermission() {
-        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_LOCATION);
-
-
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_LOCATION);
-            }
-        }
-    }
-
-    public void requestFilePermission() {
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    MY_PERMISSIONS_REQUEST_FILES);
-        }
-    }
-
     //* this is called when the permissions request is answered
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                                  String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_LOCATION: {
+            case Constants.Permissions.MY_PERMISSIONS_REQUEST_LOCATION: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     if (ContextCompat.checkSelfPermission(this,
                             android.Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
+                        Log.v(TAG,"Location Permissions Acquired");
+                        perms.requestFilePermission();
                     }
 
                 } else {
                     Log.e(TAG,"Location Permissions Denied");
                 }
-                return;
+                break;
             }
-            case MY_PERMISSIONS_REQUEST_FILES: {
-                return;
+            case Constants.Permissions.MY_PERMISSIONS_REQUEST_FILES: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(this,
+                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            == PackageManager.PERMISSION_GRANTED) {
+                        Log.v(TAG,"File Permissions Acquired");
+                    }
+                } else {
+                    Log.e(TAG,"File Permissions Denied");
+                }
             }
         }
     }
@@ -414,20 +401,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     @Override
     public boolean onMarkerClick(final Marker marker) {
         int locationNum = markerMap.get(marker.getPosition());
-        List<PictureWrapper> pw = PictureWrapper.find(PictureWrapper.class, "UUID = ? and LOC = ?", UUID, markerMap.get(marker.getPosition()) + "");
-        String pictures = "";
-        for(PictureWrapper p : pw) {
-            pictures += p.getPic() + " ";
-        }
-        Log.d(TAG,"Marker " + marker.getTitle() +  " at " + marker.getPosition().toString() + " clicked with pictures " + pictures + ".");
         launchGallery(UUID, locationNum);
         return true;
     }
 
     public void launchGallery(String uuid, int location) {
         Intent intent = new Intent(getApplicationContext(), GalleryViewActivity.class);
-        intent.putExtra(LOCATION_UUID, uuid);
-        intent.putExtra(LOCATION_NUMBER, location);
+        intent.putExtra(Constants.Intents.IntentExtras.LOCATION_UUID, uuid);
+        intent.putExtra(Constants.Intents.IntentExtras.LOCATION_NUMBER, location);
         startActivity(intent);
     }
 }

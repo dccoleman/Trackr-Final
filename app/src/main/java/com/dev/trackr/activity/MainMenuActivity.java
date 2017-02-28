@@ -1,30 +1,21 @@
-package com.dev.trackr;
+package com.dev.trackr.activity;
 
 import android.content.Intent;
-import android.location.Location;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.dev.trackr.R;
+import com.dev.trackr.adapters.AdventureAdapter;
+import com.dev.trackr.dbSchema.Adventure;
 import com.orm.SugarContext;
 import com.orm.SugarRecord;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 public class MainMenuActivity extends AppCompatActivity {
@@ -55,7 +46,7 @@ public class MainMenuActivity extends AppCompatActivity {
             SugarRecord.executeQuery("DROP TABLE PERSIST_VARS");*/
         }
 
-        CustomAdapter itemsAdapter = new CustomAdapter(this);
+        AdventureAdapter itemsAdapter = new AdventureAdapter(this);
 
         ListView l = (ListView) findViewById(R.id.past_adventures);
         l.setAdapter(itemsAdapter);
@@ -66,7 +57,7 @@ public class MainMenuActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapter, View v, int position,
                                     long arg3)
             {
-                CustomAdapter c = (CustomAdapter) adapter.getAdapter();
+                AdventureAdapter c = (AdventureAdapter) adapter.getAdapter();
                 Adventure value = c.getItem(position);
                 Log.d(TAG,value.getUUID());
                 launchMap(value.getUUID());

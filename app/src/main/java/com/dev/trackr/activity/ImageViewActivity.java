@@ -1,11 +1,12 @@
-package com.dev.trackr;
+package com.dev.trackr.activity;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.Gallery;
 import android.widget.ImageView;
+
+import com.dev.trackr.R;
 
 import java.io.File;
 
