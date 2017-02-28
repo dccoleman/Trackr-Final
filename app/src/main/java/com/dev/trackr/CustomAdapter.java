@@ -1,5 +1,6 @@
 package com.dev.trackr;
 import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +15,7 @@ import android.widget.Toast;
 import com.orm.SugarContext;
 import com.orm.SugarRecord;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -70,6 +72,17 @@ public class CustomAdapter extends BaseAdapter {
                     for(PictureWrapper p : pw) {
                         p.delete();
                     }
+
+                    File dir = new File(Environment.getExternalStorageDirectory() + "/" + "Trackr/" + a.getUUID());
+                    if (dir.isDirectory())
+                    {
+                        String[] children = dir.list();
+                        for (int i = 0; i < children.length; i++)
+                        {
+                            new File(dir, children[i]).delete();
+                        }
+                    }
+                    dir.delete();
 
                     a.delete();
                     refreshView();
