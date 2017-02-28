@@ -305,7 +305,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
 
                     if(loc != null) {
-                        if (mLastLocation == null /*|| loc.distanceTo(mLastLocation) > LOCATION_RADIUS*/) {
+                        if (mLastLocation == null || loc.distanceTo(mLastLocation) > LOCATION_RADIUS) {
                             Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
                             p.save();
 
