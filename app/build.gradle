@@ -5,7 +5,7 @@ android {
         config {
             keyAlias 'release'
             keyPassword 'wre123'
-            storeFile file('D:/Mobile Final/trackr/trackr-store.jks')
+            storeFile file('/Users/bacon/git/Trackr-Final/trackr-store.jks')
             storePassword 'wre123'
         }
     }

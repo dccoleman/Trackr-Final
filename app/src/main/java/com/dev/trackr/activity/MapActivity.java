@@ -158,12 +158,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 
     @Override
-    public void onPause() {
-        mLastLocation = null;
-        super.onPause();
-    }
-
-    @Override
     public void onResume() {
         redrawMap();
         super.onResume();
@@ -181,14 +175,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             return;
         }
 
-        mMap.getUiSettings().setScrollGesturesEnabled(false);
+        //mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setZoomGesturesEnabled(true);
 
         mMap.setOnMarkerClickListener(this);
 
         redrawMap();
 
-        ImageButton buttonOne = (ImageButton) findViewById(R.id.takePicture);
+        Button buttonOne = (Button) findViewById(R.id.takePicture);
         buttonOne.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
 
@@ -306,14 +300,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     }
 
                     if(loc != null) {
-                        if (mNumIgnores > MAX_IGNORE_LOCATION_UPDATES || (loc.distanceTo(mLastLocation) > Constants.Location.LOCATION_RADIUS && loc.distanceTo(mLastLocation) < Constants.Location.LOCATION_OUTLIER)) {
+                        if (mNumIgnores >= MAX_IGNORE_LOCATION_UPDATES || (loc.distanceTo(mLastLocation) > Constants.Location.LOCATION_RADIUS && loc.distanceTo(mLastLocation) < Constants.Location.LOCATION_OUTLIER)) {
                             Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
                             p.save();
 
                             //Log.v(TAG, "Location update from service: " + loc.toString());
                             points.add(loc);
                             redrawMap();
-                            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
+                            //mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
                             removeLoadingText();
 
                             mLastLocation = loc;

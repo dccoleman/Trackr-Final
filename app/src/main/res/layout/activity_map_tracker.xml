@@ -42,15 +42,13 @@
         android:layout_below="@+id/back"
         android:layout_alignParentStart="true" />
 
-    <ImageButton
+    <Button
+        android:text="Take Photo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:srcCompat="@drawable/ring"
         android:id="@+id/takePicture"
-        android:background="?attr/selectableItemBackground"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:elevation="0dp"
-        android:adjustViewBounds="true" />
+        android:layout_centerHorizontal="true" />
+
 
 </RelativeLayout>
