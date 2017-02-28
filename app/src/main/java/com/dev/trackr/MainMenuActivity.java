@@ -29,8 +29,8 @@ import java.util.UUID;
 
 public class MainMenuActivity extends AppCompatActivity {
 
-    public static final String NEW_ADVENTURE = "new_adventure";
-    public static final String RETURN_TO_MENU = "back_to_menu";
+    public static final String NEW_ADVENTURE = "com.dev.trackr.NEW_ADVENTURE";
+    public static final String RETURN_TO_MENU = "cin,dev,trackr.RETURN_TO_MENU";
     public static final String TAG = "Main Menu====";
 
     @Override
@@ -38,18 +38,23 @@ public class MainMenuActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_menu_activity);
 
+        //* Initialize database
         SugarContext.init(getApplicationContext());
 
+        //* Create tables if they do not exist, but only do so the first time this activity is loaded
         if(savedInstanceState == null) {
             SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
             SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS ADVENTURE (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, NAME TEXT)");
+            SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS MARKER_WRAPPER (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LOC INT, LAT DOUBLE, LNG DOUBLE)");
+            SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS PICTURE_WRAPPER (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LOC INT, PIC INT)");
+            SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS PERSIST_VARS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, PHOTOS INT, LOCATIONS INT)");
+            /*SugarRecord.executeQuery("DROP TABLE POINTS");
+            SugarRecord.executeQuery("DROP TABLE ADVENTURE");
+            SugarRecord.executeQuery("DROP TABLE MARKER_WRAPPER");
+            SugarRecord.executeQuery("DROP TABLE PICTURE_WRAPPER");
+            SugarRecord.executeQuery("DROP TABLE PERSIST_VARS");*/
         }
 
-        ArrayList<Adventure> a = new ArrayList<>();
-        a.addAll(Adventure.listAll(Adventure.class));
-        Collections.reverse(a);
-
-        //ArrayAdapter<Adventure> itemsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, a);
         CustomAdapter itemsAdapter = new CustomAdapter(this);
 
         ListView l = (ListView) findViewById(R.id.past_adventures);
@@ -84,7 +89,6 @@ public class MainMenuActivity extends AppCompatActivity {
 
     public void launchMap(String uuid) {
         Intent intent = new Intent(getApplicationContext(), MapActivity.class);
-
         intent.putExtra(NEW_ADVENTURE, uuid);
 
         startActivity(intent);
@@ -93,6 +97,7 @@ public class MainMenuActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         SugarContext.terminate();
+        super.onDestroy();
     }
 
 }

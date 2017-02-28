@@ -1,7 +1,6 @@
 package com.dev.trackr;
 
 import android.Manifest;
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -24,15 +23,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.Polyline;
-import com.orm.SugarContext;
-import com.orm.SugarRecord;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -40,11 +38,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     private ArrayList<Location> points;
 
-    private ArrayList<MarkerOptions> markers;
-
     private ArrayList<Polyline> lines;
 
-    private static boolean databaseEnabled = false;
+    private HashMap<LatLng, Integer> markerMap;
+
+    private ArrayList<Marker> markers;
+
+    private PersistVars variables;
 
     private static Intent mServiceIntent;
 
@@ -53,10 +53,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     private static final String TAG = "Maps Activity++++";
 
-    //private static final String UUID = "067e6162-3b6f-4ae2-a171-2470b63dff00";
     private static String UUID = "";
     private static final String STORED_POINTS = "storedPoints";
-    private static final float LOCATION_RADIUS = 2;
+    private static final String STORED_LOCATIONS = "storedLocations";
+    private static final float LOCATION_RADIUS = 1;
 
     private static Location mLastLocation = null;
 
@@ -69,12 +69,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         Log.d(TAG,UUID);
 
         setContentView(R.layout.activity_map_tracker);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
         if(savedInstanceState == null) {
+            variables = new PersistVars(UUID);
+            variables.save();
+
             points = new ArrayList<>();
             ArrayList<Points> l = new ArrayList<>();
             l.addAll(Points.find(Points.class, "UUID = ?", UUID));
@@ -84,19 +86,21 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
             }
 
             lines = new ArrayList<>();
-            markers = new ArrayList<>();
         } else {
             points = savedInstanceState.getParcelableArrayList(STORED_POINTS);
+            variables = PersistVars.find(PersistVars.class, "UUID = ?", UUID).get(0);
         }
 
         lines = new ArrayList<>();
+
+        markerMap = new HashMap<>();
         markers = new ArrayList<>();
 
 
         //requestLocationPermission();
         requestFilePermission();
 
-        redrawLine();
+        redrawMap();
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(TrackerService.REQUEST_LOCATION_PERMISSION);
@@ -106,8 +110,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
         mServiceIntent = new Intent(MapActivity.this, TrackerService.class);
         startService(mServiceIntent);
-
-        markers = new ArrayList<>();
 
         Button backButton = (Button) findViewById(R.id.back);
         backButton.setOnClickListener(new Button.OnClickListener() {
@@ -141,6 +143,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putParcelableArrayList(STORED_POINTS, points);
+        //savedInstanceState.putParcelableArrayList(STORED_LOCATIONS, locations);
 
         super.onSaveInstanceState(savedInstanceState);
     }
@@ -152,7 +155,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     @Override
     public void onResume() {
-        redrawLine();
+        redrawMap();
         super.onResume();
     }
 
@@ -171,27 +174,53 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(false);
 
-        redrawLine();
+        redrawMap();
 
         Button buttonOne = (Button) findViewById(R.id.takePicture);
         buttonOne.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
+                //* CameraIntent here, wait for result indicating picture has been stored
+                //* if(result == stored) {
+                // Create marker & add to map
+                // Store marker in list of markers, markerMap, & database
+                // Save pictureWrapper
+                if(mLastLocation != null) {
+                    int closeMarker = -1;
+                    for (Marker m : markers) {
+                        Location pos = new Location("");
+                        pos.setLatitude(m.getPosition().latitude);
+                        pos.setLongitude(m.getPosition().longitude);
 
-                for(MarkerOptions m : markers) {
-                    Location pos = new Location("");
-                    pos.setLatitude(m.getPosition().latitude);
-                    pos.setLongitude(m.getPosition().longitude);
-                    if(mLastLocation.distanceTo(pos) < LOCATION_RADIUS) {
-                        Toast.makeText(getApplicationContext(),"Adding to current gallery",Toast.LENGTH_SHORT).show();
+                        if (mLastLocation.distanceTo(pos) < LOCATION_RADIUS * 10) {
+                            closeMarker = markerMap.get(new LatLng(pos.getLatitude(), pos.getLongitude()));
+                            break;
+                        }
                     }
-                }
+                    if (closeMarker == -1) {
+                        LatLng pos = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+                        MarkerOptions marker = new MarkerOptions()
+                                .position(pos)
+                                .title(PersistVars.find(PersistVars.class, "UUID = ?", UUID).get(0).getLocations() + "");
 
-                MarkerOptions marker = new MarkerOptions()
-                        .position(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()))
-                        .title("PLACE ME");
-                if (mLastLocation != null) {
-                    mMap.addMarker(marker);
-                    markers.add(marker);
+                        markerMap.put(pos, variables.getLocations());
+
+                        PictureWrapper p = new PictureWrapper(UUID, variables.getLocations(), variables.getPhotos());
+                        p.save();
+                        variables.incPhotos();
+
+                        MarkerWrapper m = new MarkerWrapper(UUID, variables.getLocations(), pos.latitude, pos.longitude);
+                        m.save();
+                        variables.incLocations();
+
+                        variables.save();
+
+                        markers.add(mMap.addMarker(marker));
+                    } else {
+                        PictureWrapper p = new PictureWrapper(UUID, closeMarker,variables.getPhotos());
+                        variables.incPhotos();
+                        variables.save();
+                        p.save();
+                    }
                 }
             }
         });
@@ -204,7 +233,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                     x.delete();
                 }
                 points.clear();
-                redrawLine();
+                redrawMap();
             }
         });
 
@@ -230,12 +259,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                             Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
                             p.save();
 
-                            Log.v(TAG, "Location update from service: " + loc.toString());
+                            //Log.v(TAG, "Location update from service: " + loc.toString());
                             points.add(loc);
-                            redrawLine();
+                            redrawMap();
                             mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
-
-                            databaseEnabled = true;
 
                             mLastLocation = loc;
                         } else {
@@ -287,7 +314,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                     if (ContextCompat.checkSelfPermission(this,
                             android.Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-                        //* Create service here
                     }
 
                 } else {
@@ -295,10 +321,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 }
                 return;
             }
+            case MY_PERMISSIONS_REQUEST_FILES: {
+                return;
+            }
         }
     }
 
-    private void redrawLine(){
+    private void redrawMap(){
         if(mMap != null) {
             for(Polyline p : lines) {
                 p.remove();
@@ -311,6 +340,30 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 options.add(new LatLng(place.getLatitude(), place.getLongitude()));
             }
             lines.add(mMap.addPolyline(options));
+
+            for(Marker m : markers) {
+                m.remove();
+            }
+            markers.clear();
+            markerMap.clear();
+
+            List<MarkerWrapper> l = MarkerWrapper.find(MarkerWrapper.class, "UUID = ?", UUID);
+            for(MarkerWrapper m : l) {
+                LatLng pos = new LatLng(m.getLat(),m.getLng());
+
+                List<PictureWrapper> pw = PictureWrapper.find(PictureWrapper.class, "UUID = ? and LOC = ?", UUID, m.getLoc() + "");
+                String title = "Pictures: ";
+                for(PictureWrapper p : pw) {
+                    title += p.getPic() + ", ";
+                }
+
+                MarkerOptions marker = new MarkerOptions()
+                        .position(pos)
+                        .title(title);
+                markers.add(mMap.addMarker(marker));
+
+                markerMap.put(pos, m.getLoc());
+            }
         }
     }
 }

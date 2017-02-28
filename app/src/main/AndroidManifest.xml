@@ -51,11 +51,6 @@
         </activity>
 
         <activity
-            android:name=".base_menu_activity"
-            android:label="@string/title_activity_base_menu_activity"
-            android:theme="@style/AppTheme.NoActionBar">
-        </activity>
-        <activity
             android:name=".view_location_activity"
             android:label="@string/title_activity_view_location_activity"
             android:theme="@style/AppTheme.NoActionBar" />
@@ -67,7 +62,7 @@
             android:value="adventures.db" />
         <meta-data
             android:name="VERSION"
-            android:value="4" />
+            android:value="6" />
         <meta-data
             android:name="QUERY_LOG"
             android:value="true" />

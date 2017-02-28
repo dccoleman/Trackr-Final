@@ -16,6 +16,7 @@ import com.orm.SugarRecord;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class CustomAdapter extends BaseAdapter {
     Context context;
@@ -31,7 +32,6 @@ public class CustomAdapter extends BaseAdapter {
     }
     @Override
     public int getCount() {
-        // TODO Auto-generated method stub
         return adventures.size();
     }
 
@@ -42,8 +42,7 @@ public class CustomAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        // TODO Auto-generated method stub
-        return position;
+        return adventures.get(position).getId();
     }
 
     @Override
@@ -58,8 +57,21 @@ public class CustomAdapter extends BaseAdapter {
             b.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Toast.makeText(context, "Deleting adventure " + adventures.get(position).getName(), Toast.LENGTH_SHORT).show();
-                    adventures.remove(position).delete();
+                    Toast.makeText(context, "Deleting " + adventures.get(position).getName(), Toast.LENGTH_SHORT).show();
+                    Adventure a = adventures.remove(position);
+
+                    PersistVars.find(PersistVars.class, "UUID = ?", a.getUUID()).get(0).delete();
+                    List<MarkerWrapper> mw = MarkerWrapper.find(MarkerWrapper.class, "UUID = ?", a.getUUID());
+                    for(MarkerWrapper m : mw) {
+                        m.delete();
+                    }
+
+                    List<PictureWrapper> pw = PictureWrapper.find(PictureWrapper.class, "UUID + ?", a.getUUID());
+                    for(PictureWrapper p : pw) {
+                        p.delete();
+                    }
+
+                    a.delete();
                     refreshView();
                 }
             });
@@ -77,9 +89,6 @@ public class CustomAdapter extends BaseAdapter {
         adventures.clear();
         adventures.addAll(Adventure.listAll(Adventure.class));
         Collections.reverse(adventures);
-        for(Adventure a : adventures) {
-            Log.v("Adventures Found", a.toString());
-        }
         notifyDataSetChanged();
     }
 
