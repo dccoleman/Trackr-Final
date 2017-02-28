@@ -31,6 +31,7 @@ import com.orm.SugarContext;
 import com.orm.SugarRecord;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -53,7 +54,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     private static final String TAG = "Maps Activity++++";
 
     //private static final String UUID = "067e6162-3b6f-4ae2-a171-2470b63dff00";
-    private static final String UUID = "167e6162-3b6f-4ae2-a171-2470b63dff00";
+    private static String UUID = "";
     private static final String STORED_POINTS = "storedPoints";
     private static final float LOCATION_RADIUS = 2;
 
@@ -64,7 +65,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SugarContext.init(getApplicationContext());
+        UUID = getIntent().getStringExtra(MainMenuActivity.NEW_ADVENTURE);
+        Log.d(TAG,UUID);
 
         setContentView(R.layout.activity_map_tracker);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -74,6 +76,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
         if(savedInstanceState == null) {
             points = new ArrayList<>();
+            ArrayList<Points> l = new ArrayList<>();
+            l.addAll(Points.find(Points.class, "UUID = ?", UUID));
+
+            for(Points p : l) {
+                points.add(pointsToLocation(p));
+            }
+
             lines = new ArrayList<>();
             markers = new ArrayList<>();
         } else {
@@ -86,9 +95,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
         //requestLocationPermission();
         requestFilePermission();
-
-        //* Create database
-        SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
 
         redrawLine();
 
@@ -108,18 +114,27 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
             public void onClick(View v) {
                 Intent intent = new Intent(getApplicationContext(), MainMenuActivity.class);
                 stopService(mServiceIntent);
+                finish();
                 startActivity(intent);
 
             }
         });
     }
 
+    private Location pointsToLocation(Points p) {
+        Location l = new Location("");
+        l.setLatitude(p.getLat());
+        l.setLongitude(p.getLng());
+        l.setTime(p.getTime());
+        return l;
+    }
+
     @Override
     public void onDestroy() {
         stopService(mServiceIntent);
-        SugarContext.terminate();
         LocalBroadcastManager bm = LocalBroadcastManager.getInstance(this);
         bm.unregisterReceiver(mBroadcastReceiver);
+        mLastLocation = null;
         super.onDestroy();
     }
 
@@ -184,8 +199,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         buttonOne = (Button) findViewById(R.id.resetPath);
         buttonOne.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-                SugarRecord.executeQuery("DROP TABLE POINTS");
-                SugarRecord.executeQuery("CREATE TABLE IF NOT EXISTS POINTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, UUID TEXT, LAT DOUBLE, LNG DOUBLE, TIME LONG)");
+                List<Points> p = Points.find(Points.class, "UUID = ?", UUID);
+                for(Points x : p) {
+                    x.delete();
+                }
                 points.clear();
                 redrawLine();
             }

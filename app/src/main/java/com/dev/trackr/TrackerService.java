@@ -71,7 +71,8 @@ public class TrackerService extends IntentService implements GoogleApiClient.Con
     @Override
     public void onDestroy() {
         Log.d(TAG, "Service stopping");
-        //LocationServices.FusedLocationApi.removeLocationUpdates(mApiClient,this);
+        LocationServices.FusedLocationApi.removeLocationUpdates(mApiClient,this);
+        mApiClient.disconnect();
     }
 
     //* sending the intent to the activity to alter the ui
