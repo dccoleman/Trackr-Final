@@ -2,6 +2,7 @@ package com.dev.trackr.activity;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
@@ -11,9 +12,12 @@ import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -61,6 +65,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private static Intent mServiceIntent;
 
     private static final String TAG = "Maps Activity++++";
+
+    private String mText = "";
 
     private static final int MAX_IGNORE_LOCATION_UPDATES = 2;
 
@@ -255,7 +261,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         p.save();
                         variables.incPhotos();
 
-                        MarkerWrapper m = new MarkerWrapper(UUID, variables.getLocations(), pos.latitude, pos.longitude);
+                        Log.d("DIKS", mText);
+
+                        MarkerWrapper m = new MarkerWrapper(UUID, "", variables.getLocations(), pos.latitude, pos.longitude);
+                        nameRequest(UUID, variables.getLocations());
                         m.save();
                         variables.incLocations();
 
@@ -278,6 +287,31 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             }
         }
         variables.save();
+    }
+
+    private void nameRequest(final String UUID, final int location) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter Name for Location");
+
+        // Set up the input
+        final EditText input = new EditText(this);
+        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String text = input.getText().toString();
+                MarkerWrapper m = MarkerWrapper.find(MarkerWrapper.class, "UUID = ? and LOC = ?", UUID, location + "").get(0);
+                m.setName(text);
+                m.save();
+
+            }
+        });
+
+        builder.show();
     }
 
     //* handler for messages sent from the service

@@ -7,14 +7,15 @@ import com.orm.SugarRecord;
  */
 
 public class MarkerWrapper extends SugarRecord {
-    private String UUID;
+    private String UUID, name;
     private int loc;
     private double lat, lng;
 
-    public MarkerWrapper() {};
+    public MarkerWrapper() {}
 
-    public MarkerWrapper(String UUID, int loc, double lat, double lng) {
+    public MarkerWrapper(String UUID, String name, int loc, double lat, double lng) {
         this.UUID = UUID;
+        this.name = name;
         this.loc = loc;
         this.lat = lat;
         this.lng = lng;
@@ -50,5 +51,13 @@ public class MarkerWrapper extends SugarRecord {
 
     public void setLng(double lng) {
         this.lng = lng;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

@@ -8,10 +8,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.TextView;
 
 import com.dev.trackr.Constants;
 import com.dev.trackr.R;
 import com.dev.trackr.adapters.PhotoAdapter;
+import com.dev.trackr.dbSchema.MarkerWrapper;
 import com.dev.trackr.dbSchema.PictureWrapper;
 
 import java.io.File;
@@ -27,6 +29,7 @@ public class GalleryViewActivity extends AppCompatActivity {
     private static final String FILE_DIR = Environment.getExternalStorageDirectory() + "/" + "Trackr/";
 
     public static final String FILE_PATH = "file_path";
+    public static final String PICTURE_UUID = "picture_uuid";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +44,12 @@ public class GalleryViewActivity extends AppCompatActivity {
         File f = new File(FILE_DIR + UUID);
 
         List<PictureWrapper> l = PictureWrapper.find(PictureWrapper.class, "UUID = ? and LOC = ?", UUID, loc + "");
+
+        MarkerWrapper m = MarkerWrapper.find(MarkerWrapper.class, "UUID = ? and LOC = ?", UUID, loc + "").get(0);
+
+        TextView t = (TextView) findViewById(R.id.titleText);
+        t.setText(m.getName());
+
 
         File[] files = f.listFiles();
         for(int i = 0; i < l.size(); i++) {
@@ -60,6 +69,7 @@ public class GalleryViewActivity extends AppCompatActivity {
 
                 Intent intent = new Intent(getApplicationContext(), ImageViewActivity.class);
                 intent.putExtra(FILE_PATH, images.get(position).getAbsolutePath());
+                intent.putExtra(PICTURE_UUID, UUID);
 
                 startActivity(intent);
 
