@@ -49,7 +49,7 @@ public class PersistVars extends SugarRecord {
     }
 
     public int incPhotos() {
-        return ++this.photos;
+        return this.photos += 1;
     }
 
     public int decPhotos() {
@@ -57,7 +57,7 @@ public class PersistVars extends SugarRecord {
     }
 
     public int incLocations() {
-        return ++this.locations;
+        return this.locations += 1;
     }
 
     public int decLocations() {

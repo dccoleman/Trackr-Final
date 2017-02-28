@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Picture;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Environment;
@@ -50,8 +51,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private ArrayList<Marker> markers;
 
-    private PersistVars variables;
-
     private static Intent mServiceIntent;
 
     private static final int REQUEST_PHOTO = 0;
@@ -62,9 +61,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private static String UUID = "";
     private static final String STORED_POINTS = "storedPoints";
-    private static final String VIEW_LOCATION_PICTURES = "com.dev.trackr.VIEW_PICTURES";
-    private static final String LOCATION_NUMBER = "locationNumber";
-    private static final String LOCATION_UUID = "UUID";
+    public static final String LOCATION_NUMBER = "locationNumber";
+    public static final String LOCATION_UUID = "UUID";
     private static final String FILE_DIR = Environment.getExternalStorageDirectory() + "/" + "Trackr/";
     private static final float LOCATION_RADIUS = 1;
 
@@ -82,7 +80,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
+        PersistVars variables;
         if(savedInstanceState == null) {
             variables = new PersistVars(UUID);
             variables.save();
@@ -198,6 +196,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 // Save pictureWrapper
                 // use variables.getPhotos() to name photo under UUID
 
+                PersistVars variables = PersistVars.find(PersistVars.class, "UUID = ?", UUID).get(0);
+
                 Intent imageIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
                 File imagesFolder = new File(FILE_DIR + UUID);
@@ -206,10 +206,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 File image = new File(imagesFolder, variables.getPhotos() + ".png");
                 Uri uriSavedImage = Uri.fromFile(image);
 
+                Log.d(TAG,variables.getPhotos() + "");
+
+                variables.save();
+
                 imageIntent.putExtra(MediaStore.EXTRA_OUTPUT, uriSavedImage);
                 startActivityForResult(imageIntent, REQUEST_PHOTO);
-
-
             }
         });
 
@@ -230,6 +232,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        PersistVars variables = PersistVars.find(PersistVars.class, "UUID = ?", UUID).get(0);
         // Check which request we're responding to
         if (requestCode == REQUEST_PHOTO) {
             // Make sure the request was successful
@@ -241,10 +244,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         pos.setLatitude(m.getPosition().latitude);
                         pos.setLongitude(m.getPosition().longitude);
 
-                        if (mLastLocation.distanceTo(pos) < LOCATION_RADIUS * 10) {
+                        if (mLastLocation.distanceTo(pos) < LOCATION_RADIUS ) {
                             closeMarker = markerMap.get(new LatLng(pos.getLatitude(), pos.getLongitude()));
                             break;
                         }
+                    }
+                    List<PictureWrapper> z = PictureWrapper.find(PictureWrapper.class,"UUID = ?", UUID);
+                    for(PictureWrapper x : z) {
+                        Log.d(TAG,"Picture " + x.getPic() + " goes with location " + x.getLoc());
                     }
                     if (closeMarker == -1) {
                         LatLng pos = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
@@ -272,8 +279,15 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         p.save();
                     }
                 }
+            } else {
+                List<PictureWrapper> z = PictureWrapper.find(PictureWrapper.class,"UUID = ?", UUID);
+                for(PictureWrapper x : z) {
+                    Log.d(TAG,"Picture " + x.getPic() + " goes with location " + x.getLoc());
+                }
+                variables.save();
             }
         }
+        variables.save();
     }
 
     //* handler for messages sent from the service
@@ -291,7 +305,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
 
                     if(loc != null) {
-                        if (mLastLocation == null || loc.distanceTo(mLastLocation) > LOCATION_RADIUS) {
+                        if (mLastLocation == null /*|| loc.distanceTo(mLastLocation) > LOCATION_RADIUS*/) {
                             Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
                             p.save();
 
@@ -414,7 +428,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         Intent intent = new Intent(getApplicationContext(), GalleryViewActivity.class);
         intent.putExtra(LOCATION_UUID, uuid);
         intent.putExtra(LOCATION_NUMBER, location);
-
         startActivity(intent);
     }
 }

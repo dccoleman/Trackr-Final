@@ -84,7 +84,6 @@ public class MainMenuActivity extends AppCompatActivity {
                 launchMap(uuid.toString());
             }
         });
-
         }
 
     public void launchMap(String uuid) {

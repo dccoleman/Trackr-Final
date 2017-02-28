@@ -16,7 +16,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -32,7 +32,7 @@
 
         <activity
             android:name=".MapActivity"
-            android:label="@string/title_activity_map_tracker"></activity>
+            android:label="@string/title_activity_map_tracker" />
         <activity
             android:name=".MainMenuActivity"
             android:label="@string/title_activity_main_menu_activity"
@@ -43,10 +43,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".view_location_activity"
-            android:label="@string/title_activity_view_location_activity"
-            android:theme="@style/AppTheme.NoActionBar" />
 
         <service android:name=".TrackerService" />
 
@@ -63,7 +59,8 @@
             android:name="DOMAIN_PACKAGE_NAME"
             android:value="com.dev.trackr" />
 
-        <activity android:name=".GalleryViewActivity"></activity>
+        <activity android:name=".GalleryViewActivity" />
+        <activity android:name=".ImageViewActivity"></activity>
     </application>
 
 </manifest>
