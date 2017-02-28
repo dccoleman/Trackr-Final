@@ -10,7 +10,7 @@ public class Constants {
     }
 
     public static class Location {
-        public static final float LOCATION_RADIUS = 1;
+        public static final float LOCATION_RADIUS = 3;
         public static final float LOCATION_OUTLIER = 10;
     }
 

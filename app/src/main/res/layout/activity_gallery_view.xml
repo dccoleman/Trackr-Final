@@ -4,7 +4,8 @@
     android:id="@+id/activity_gallery_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.dev.trackr.activity.GalleryViewActivity">
+    tools:context="com.dev.trackr.activity.GalleryViewActivity"
+    android:background="@android:color/darker_gray">
 
     <GridView
         android:layout_width="wrap_content"

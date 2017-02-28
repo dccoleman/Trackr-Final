@@ -1,5 +1,6 @@
 package com.dev.trackr.activity;
 
+import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
@@ -45,16 +46,19 @@ public class GalleryViewActivity extends AppCompatActivity {
 
         List<PictureWrapper> l = PictureWrapper.find(PictureWrapper.class, "UUID = ? and LOC = ?", UUID, loc + "");
 
-        MarkerWrapper m = MarkerWrapper.find(MarkerWrapper.class, "UUID = ? and LOC = ?", UUID, loc + "").get(0);
-
-        TextView t = (TextView) findViewById(R.id.titleText);
-        t.setText(m.getName());
-
-
         File[] files = f.listFiles();
         for(int i = 0; i < l.size(); i++) {
             images.add(files[l.get(i).getPic()]);
         }
+
+        if(images.size() == 1) {
+            startImageView(images.get(0).getAbsolutePath(),UUID);
+        }
+
+        MarkerWrapper m = MarkerWrapper.find(MarkerWrapper.class, "UUID = ? and LOC = ?", UUID, loc + "").get(0);
+
+        TextView t = (TextView) findViewById(R.id.titleText);
+        t.setText(m.getName());
 
         Log.d("GalleryView____", images.size() + "");
 
@@ -67,15 +71,19 @@ public class GalleryViewActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
 
-                Intent intent = new Intent(getApplicationContext(), ImageViewActivity.class);
-                intent.putExtra(FILE_PATH, images.get(position).getAbsolutePath());
-                intent.putExtra(PICTURE_UUID, UUID);
-
-                startActivity(intent);
+                startImageView(images.get(position).getAbsolutePath(), UUID);
 
             }
         });
 
 
+    }
+
+    public void startImageView(String file, String UUID) {
+        Intent intent = new Intent(getApplicationContext(), ImageViewActivity.class);
+        intent.putExtra(FILE_PATH, file);
+        intent.putExtra(PICTURE_UUID, UUID);
+
+        startActivity(intent);
     }
 }

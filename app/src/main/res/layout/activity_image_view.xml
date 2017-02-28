@@ -5,7 +5,8 @@
     android:id="@+id/activity_image_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.dev.trackr.activity.ImageViewActivity">
+    tools:context="com.dev.trackr.activity.ImageViewActivity"
+    android:background="@android:color/darker_gray">
 
     <com.dev.trackr.TouchImageView
         android:layout_width="wrap_content"

@@ -1,5 +1,6 @@
 package com.dev.trackr.activity;
 
+import android.app.ActionBar;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -66,24 +67,26 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private static final String TAG = "Maps Activity++++";
 
-    private String mText = "";
-
     private static final int MAX_IGNORE_LOCATION_UPDATES = 2;
 
     private static int mNumIgnores = MAX_IGNORE_LOCATION_UPDATES;
 
     private static Location mLastLocation = null;
+
     private static String UUID = "";
+
+    private boolean firstRun = true;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        setContentView(R.layout.activity_map_tracker);
+
         UUID = getIntent().getStringExtra(Constants.Intents.IntentExtras.NEW_ADVENTURE);
         Log.d(TAG,UUID);
 
-        setContentView(R.layout.activity_map_tracker);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -181,7 +184,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             return;
         }
 
-        //mMap.getUiSettings().setScrollGesturesEnabled(false);
         mMap.getUiSettings().setZoomGesturesEnabled(true);
 
         mMap.setOnMarkerClickListener(this);
@@ -245,10 +247,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                             break;
                         }
                     }
-                    List<PictureWrapper> z = PictureWrapper.find(PictureWrapper.class,"UUID = ?", UUID);
-                    for(PictureWrapper x : z) {
-                        Log.d(TAG,"Picture " + x.getPic() + " goes with location " + x.getLoc());
-                    }
+
                     if (closeMarker == -1) {
                         LatLng pos = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
                         MarkerOptions marker = new MarkerOptions()
@@ -260,8 +259,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         PictureWrapper p = new PictureWrapper(UUID, variables.getLocations(), variables.getPhotos());
                         p.save();
                         variables.incPhotos();
-
-                        Log.d("DIKS", mText);
 
                         MarkerWrapper m = new MarkerWrapper(UUID, "", variables.getLocations(), pos.latitude, pos.longitude);
                         nameRequest(UUID, variables.getLocations());
@@ -341,7 +338,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                             //Log.v(TAG, "Location update from service: " + loc.toString());
                             points.add(loc);
                             redrawMap();
-                            //mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
+                            if(firstRun) {
+                                firstRun = false;
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
+                            }
                             removeLoadingText();
 
                             mLastLocation = loc;

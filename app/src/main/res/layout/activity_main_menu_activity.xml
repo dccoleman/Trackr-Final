@@ -11,34 +11,56 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.dev.trackr.activity.MainMenuActivity"
-    tools:showIn="@layout/activity_main_menu_activity">
+    android:background="@android:color/darker_gray"
+    android:focusableInTouchMode="true">
 
     <ListView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:id="@+id/past_adventures"
         android:layout_below="@+id/adventureName"
-        android:layout_alignParentStart="true"
-        android:id="@+id/past_adventures" />
+        android:layout_alignParentStart="true" />
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:inputType="textPersonName"
-        android:text="New Adventure"
         android:ems="10"
         android:id="@+id/adventureName"
-        tools:text="New Adventure"
+        android:hint="Enter Adventure Name Here"
+        android:textColorHint="@color/common_google_signin_btn_text_light"
+        android:layout_below="@+id/textView2"
+        android:layout_alignParentStart="true"
+        android:layout_toStartOf="@+id/createAdventure" />
+
+    <TextView
+        android:text="Welcome to Trackr!"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView2"
         android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
+        android:layout_centerHorizontal="true"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="30sp" />
+
+    <TextView
+        android:text="No Adventures yet :( Go make some memories!"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/emptyView"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="24sp"
+        android:textAlignment="center" />
 
     <Button
-        android:text="Create"
+        android:text="Add"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/createAdventure"
-        tools:text="Create"
-        android:layout_alignBaseline="@+id/adventureName"
-        android:layout_alignBottom="@+id/adventureName"
-        android:layout_alignParentEnd="true" />
+        android:layout_above="@+id/past_adventures"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/textView2" />
 
 </RelativeLayout>

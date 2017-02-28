@@ -1,5 +1,6 @@
 package com.dev.trackr.activity;
 
+import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +10,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.dev.trackr.Constants;
 import com.dev.trackr.R;
@@ -29,6 +31,7 @@ public class MainMenuActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main_menu_activity);
 
         //* Initialize database
@@ -66,15 +69,21 @@ public class MainMenuActivity extends AppCompatActivity {
             }
         });
 
+        l.setEmptyView(findViewById(R.id.emptyView));
+
         Button createButton = (Button) findViewById(R.id.createAdventure);
         final EditText textfield = (EditText) findViewById(R.id.adventureName);
         createButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
 
-                UUID uuid = UUID.randomUUID();
-                Adventure a = new Adventure(uuid.toString(), textfield.getText().toString());
-                a.save();
-                launchMap(uuid.toString());
+                if(!textfield.getText().toString().equals("")) {
+                    UUID uuid = UUID.randomUUID();
+                    Adventure a = new Adventure(uuid.toString(), textfield.getText().toString());
+                    a.save();
+                    launchMap(uuid.toString());
+                } else {
+                    Toast.makeText(getApplicationContext(),"Enter a name in the textfield above!", Toast.LENGTH_LONG).show();
+                }
             }
         });
 

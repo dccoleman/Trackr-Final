@@ -1,5 +1,6 @@
 package com.dev.trackr.activity;
 
+import android.app.ActionBar;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Picture;
@@ -8,6 +9,7 @@ import android.media.ExifInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -34,6 +36,7 @@ public class ImageViewActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_image_view);
 
         ImageView img = (ImageView) findViewById(R.id.originalView);
