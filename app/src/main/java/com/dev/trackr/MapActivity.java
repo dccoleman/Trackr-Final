@@ -62,7 +62,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private static String UUID = "";
     private static final String STORED_POINTS = "storedPoints";
-    private static final String STORED_LOCATIONS = "storedLocations";
+    private static final String VIEW_LOCATION_PICTURES = "com.dev.trackr.VIEW_PICTURES";
+    private static final String LOCATION_NUMBER = "locationNumber";
+    private static final String LOCATION_UUID = "UUID";
     private static final String FILE_DIR = Environment.getExternalStorageDirectory() + "/" + "Trackr/";
     private static final float LOCATION_RADIUS = 1;
 
@@ -397,12 +399,22 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     @Override
     public boolean onMarkerClick(final Marker marker) {
-        List<PictureWrapper> pw = PictureWrapper.find(PictureWrapper.class, "UUID = ? and LOC = ?", UUID, markerMap.get((marker.getPosition())) + "");
+        int locationNum = markerMap.get(marker.getPosition());
+        List<PictureWrapper> pw = PictureWrapper.find(PictureWrapper.class, "UUID = ? and LOC = ?", UUID, markerMap.get(marker.getPosition()) + "");
         String pictures = "";
         for(PictureWrapper p : pw) {
             pictures += p.getPic() + " ";
         }
         Log.d(TAG,"Marker " + marker.getTitle() +  " at " + marker.getPosition().toString() + " clicked with pictures " + pictures + ".");
+        launchGallery(UUID, locationNum);
         return true;
+    }
+
+    public void launchGallery(String uuid, int location) {
+        Intent intent = new Intent(getApplicationContext(), GalleryViewActivity.class);
+        intent.putExtra(LOCATION_UUID, uuid);
+        intent.putExtra(LOCATION_NUMBER, location);
+
+        startActivity(intent);
     }
 }
