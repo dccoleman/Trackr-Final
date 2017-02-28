@@ -18,9 +18,9 @@ public class Constants {
         public class IntentExtras {
             public static final String LOCATION_NUMBER = "locationNumber";
             public static final String LOCATION_UUID = "UUID";
+            public static final String NEW_ADVENTURE = "com.dev.trackr.NEW_ADVENTURE";
+            public static final int REQUEST_PHOTO = 0;
         }
-
-        public static final int REQUEST_PHOTO = 0;
     }
 
     public static class SavedInstanceStateAccessors {

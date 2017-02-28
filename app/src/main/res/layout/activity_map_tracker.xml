@@ -1,4 +1,5 @@
-<RelativeLayout xmlns:tools="http://schemas.android.com/tools"
+<RelativeLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:android="http://schemas.android.com/apk/res/android">
@@ -13,22 +14,24 @@
         tools:context="com.dev.trackr.activity.MapActivity"
         map:cameraZoom="17"/>
 
-    <Button
-        android:id="@+id/takePicture"
+    <TextView
+        android:text="Loading Location..."
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_toEndOf="@+id/resetPath"
-        android:text="Add Picture"/>
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/loading"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        android:textSize="20sp" />
 
-    <Button
-        android:id="@+id/resetPath"
+    <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal|center_vertical"
-        android:text="Reset Path"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
+        app:srcCompat="@drawable/ring"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/takePicture"
+        android:background="?attr/selectableItemBackground"/>
 
     <Button
         android:text="Back"
@@ -36,7 +39,16 @@
         android:layout_height="wrap_content"
         android:id="@+id/back"
         tools:text="Back"
-        android:layout_below="@+id/resetPath"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:id="@+id/resetPath"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal|center_vertical"
+        android:text="Reset Path"
+        android:layout_below="@+id/back"
         android:layout_alignParentStart="true" />
 
 </RelativeLayout>

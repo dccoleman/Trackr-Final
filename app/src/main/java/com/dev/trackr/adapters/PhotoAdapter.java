@@ -1,17 +1,14 @@
 package com.dev.trackr.adapters;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.RectF;
-import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.GridView;
 import android.widget.ImageView;
 
 import java.io.File;
@@ -22,8 +19,6 @@ public class PhotoAdapter extends BaseAdapter {
     private ArrayList<Bitmap> files;
 
     private int MAX_WIDTH, MAX_HEIGHT;
-
-    private static final int PICTURE_SIZE = 1000;
 
     public PhotoAdapter(Context c, ArrayList<File> files) {
         mContext = c;
@@ -37,7 +32,7 @@ public class PhotoAdapter extends BaseAdapter {
         for(File x : files) {
             BitmapFactory.Options bmOptions = new BitmapFactory.Options();
             Bitmap bitmap = BitmapFactory.decodeFile(x.getAbsolutePath(),bmOptions);
-            this.files.add(scaleBitmapAndKeepRation(bitmap, MAX_WIDTH/2,MAX_HEIGHT/2));
+            this.files.add(scaleBitmapAndKeepRatio(bitmap, MAX_WIDTH/2,MAX_HEIGHT/2));
     }
     }
 
@@ -58,7 +53,6 @@ public class PhotoAdapter extends BaseAdapter {
         ImageView imageView;
         if (convertView == null) {  // if it's not recycled, initialize some attributes
             imageView = new ImageView(mContext);
-            //imageView.setLayoutParams(new GridView.LayoutParams(PICTURE_SIZE, PICTURE_SIZE));
             imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
             imageView.setPadding(4, 4, 4, 4);
         } else {
@@ -69,7 +63,7 @@ public class PhotoAdapter extends BaseAdapter {
         return imageView;
     }
 
-    public static Bitmap scaleBitmapAndKeepRation(Bitmap TargetBmp,int reqHeightInPixels,int reqWidthInPixels)
+    public static Bitmap scaleBitmapAndKeepRatio(Bitmap TargetBmp, int reqHeightInPixels, int reqWidthInPixels)
     {
         Matrix m = new Matrix();
         m.setRectToRect(new RectF(0, 0, TargetBmp.getWidth(), TargetBmp.getHeight()), new RectF(0, 0, reqWidthInPixels, reqHeightInPixels), Matrix.ScaleToFit.CENTER);

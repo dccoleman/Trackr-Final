@@ -10,9 +10,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
+import com.dev.trackr.Constants;
 import com.dev.trackr.R;
 import com.dev.trackr.adapters.AdventureAdapter;
 import com.dev.trackr.dbSchema.Adventure;
+import com.dev.trackr.permissions.PermissionsManager;
 import com.orm.SugarContext;
 import com.orm.SugarRecord;
 
@@ -20,9 +22,9 @@ import java.util.UUID;
 
 public class MainMenuActivity extends AppCompatActivity {
 
-    public static final String NEW_ADVENTURE = "com.dev.trackr.NEW_ADVENTURE";
-    public static final String RETURN_TO_MENU = "cin,dev,trackr.RETURN_TO_MENU";
     public static final String TAG = "Main Menu====";
+
+    private PermissionsManager perms;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,13 +77,23 @@ public class MainMenuActivity extends AppCompatActivity {
                 launchMap(uuid.toString());
             }
         });
+
+        perms = new PermissionsManager(this);
+        perms.requestPermissionsIfNecessary();
         }
 
     public void launchMap(String uuid) {
         Intent intent = new Intent(getApplicationContext(), MapActivity.class);
-        intent.putExtra(NEW_ADVENTURE, uuid);
+        intent.putExtra(Constants.Intents.IntentExtras.NEW_ADVENTURE, uuid);
 
         startActivity(intent);
+    }
+
+    //* this is called when the permissions request is answered
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        perms.handlePermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override

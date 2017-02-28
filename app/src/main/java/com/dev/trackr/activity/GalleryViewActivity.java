@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+import com.dev.trackr.Constants;
 import com.dev.trackr.R;
 import com.dev.trackr.adapters.PhotoAdapter;
 import com.dev.trackr.dbSchema.PictureWrapper;
@@ -33,8 +34,8 @@ public class GalleryViewActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_gallery_view);
 
-        loc = getIntent().getIntExtra(MapActivity.LOCATION_NUMBER, -1);
-        UUID = getIntent().getStringExtra(MapActivity.LOCATION_UUID);
+        loc = getIntent().getIntExtra(Constants.Intents.IntentExtras.LOCATION_NUMBER, -1);
+        UUID = getIntent().getStringExtra(Constants.Intents.IntentExtras.LOCATION_UUID);
 
         images = new ArrayList<>();
         File f = new File(FILE_DIR + UUID);

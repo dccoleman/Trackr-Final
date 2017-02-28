@@ -4,18 +4,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.dev.trackr.Constants;
 import com.dev.trackr.R;
@@ -40,7 +40,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.dev.trackr.Constants.Intents.REQUEST_PHOTO;
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
+
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -72,7 +74,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        UUID = getIntent().getStringExtra(MainMenuActivity.NEW_ADVENTURE);
+        UUID = getIntent().getStringExtra(Constants.Intents.IntentExtras.NEW_ADVENTURE);
         Log.d(TAG,UUID);
 
         setContentView(R.layout.activity_map_tracker);
@@ -127,6 +129,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
             }
         });
+
+        TextView loading = (TextView) findViewById(R.id.loading);
+        loading.setVisibility(VISIBLE);
     }
 
     private Location pointsToLocation(Points p) {
@@ -142,20 +147,19 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         stopService(mServiceIntent);
         LocalBroadcastManager bm = LocalBroadcastManager.getInstance(this);
         bm.unregisterReceiver(mBroadcastReceiver);
-        mLastLocation = null;
         super.onDestroy();
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putParcelableArrayList(Constants.SavedInstanceStateAccessors.STORED_POINTS, points);
-        //savedInstanceState.putParcelableArrayList(STORED_LOCATIONS, locations);
 
         super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
     public void onPause() {
+        mLastLocation = null;
         super.onPause();
     }
 
@@ -167,6 +171,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+
         mMap = googleMap;
 
         try{
@@ -177,22 +182,15 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
 
         mMap.getUiSettings().setScrollGesturesEnabled(false);
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setZoomGesturesEnabled(false);
+        mMap.getUiSettings().setZoomGesturesEnabled(true);
 
         mMap.setOnMarkerClickListener(this);
 
         redrawMap();
 
-        Button buttonOne = (Button) findViewById(R.id.takePicture);
+        ImageButton buttonOne = (ImageButton) findViewById(R.id.takePicture);
         buttonOne.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-                //* CameraIntent here, wait for result indicating picture has been stored
-                //* if(result == stored) {
-                // Create marker & add to map
-                // Store marker in list of markers, markerMap, & database
-                // Save pictureWrapper
-                // use variables.getPhotos() to name photo under UUID
 
                 PersistVars variables = PersistVars.find(PersistVars.class, "UUID = ?", UUID).get(0);
 
@@ -209,12 +207,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 variables.save();
 
                 imageIntent.putExtra(MediaStore.EXTRA_OUTPUT, uriSavedImage);
-                startActivityForResult(imageIntent, REQUEST_PHOTO);
+                startActivityForResult(imageIntent, Constants.Intents.IntentExtras.REQUEST_PHOTO);
             }
         });
 
-        buttonOne = (Button) findViewById(R.id.resetPath);
-        buttonOne.setOnClickListener(new Button.OnClickListener() {
+        Button button = (Button) findViewById(R.id.resetPath);
+        button.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
                 List<Points> p = Points.find(Points.class, "UUID = ?", UUID);
                 for(Points x : p) {
@@ -232,7 +230,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         PersistVars variables = PersistVars.find(PersistVars.class, "UUID = ?", UUID).get(0);
         // Check which request we're responding to
-        if (requestCode == REQUEST_PHOTO) {
+        if (requestCode == Constants.Intents.IntentExtras.REQUEST_PHOTO) {
             // Make sure the request was successful
             if (resultCode == RESULT_OK) {
                 if(mLastLocation != null) {
@@ -301,9 +299,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                 case TrackerService.UPDATE_LOCATION:
                     Location loc = intent.getParcelableExtra(TrackerService.UPDATE_LOCATION);
+                    if(mLastLocation == null) {
+                        mLastLocation = loc;
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
+                        removeLoadingText();
+                    }
 
                     if(loc != null) {
-                        if (mLastLocation == null || loc.distanceTo(mLastLocation) > Constants.Location.LOCATION_RADIUS && loc.distanceTo(mLastLocation) < Constants.Location.LOCATION_OUTLIER) {
+                        if (mNumIgnores > MAX_IGNORE_LOCATION_UPDATES || (loc.distanceTo(mLastLocation) > Constants.Location.LOCATION_RADIUS && loc.distanceTo(mLastLocation) < Constants.Location.LOCATION_OUTLIER)) {
                             Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
                             p.save();
 
@@ -311,6 +314,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                             points.add(loc);
                             redrawMap();
                             mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(loc.getLatitude(), loc.getLongitude())));
+                            removeLoadingText();
 
                             mLastLocation = loc;
 
@@ -319,6 +323,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                             Log.v(TAG, "Location is either within " + Constants.Location.LOCATION_RADIUS + " OR outside " + Constants.Location.LOCATION_OUTLIER + " meters. Will be ignored.");
                             Log.v(TAG, "Location has been ignored " + mNumIgnores + " times. After " + MAX_IGNORE_LOCATION_UPDATES + " times the location will be accepted");
                             mNumIgnores++;
+                            removeLoadingText();
                         }
                     }
                     break;
@@ -329,39 +334,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         }
     };
 
-    //* this is called when the permissions request is answered
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                                  String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case Constants.Permissions.MY_PERMISSIONS_REQUEST_LOCATION: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ContextCompat.checkSelfPermission(this,
-                            android.Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PackageManager.PERMISSION_GRANTED) {
-                        Log.v(TAG,"Location Permissions Acquired");
-                        perms.requestFilePermission();
-                    }
-
-                } else {
-                    Log.e(TAG,"Location Permissions Denied");
-                }
-                break;
-            }
-            case Constants.Permissions.MY_PERMISSIONS_REQUEST_FILES: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ContextCompat.checkSelfPermission(this,
-                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            == PackageManager.PERMISSION_GRANTED) {
-                        Log.v(TAG,"File Permissions Acquired");
-                    }
-                } else {
-                    Log.e(TAG,"File Permissions Denied");
-                }
-            }
-        }
+    private void removeLoadingText() {
+        TextView loadText = (TextView) findViewById(R.id.loading);
+        loadText.setVisibility(INVISIBLE);
     }
 
     private void redrawMap(){
