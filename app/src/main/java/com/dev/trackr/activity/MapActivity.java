@@ -77,7 +77,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private boolean firstRun = true;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -331,11 +330,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     }
 
                     if(loc != null) {
-                        if (mNumIgnores >= MAX_IGNORE_LOCATION_UPDATES || (loc.distanceTo(mLastLocation) > Constants.Location.LOCATION_RADIUS && loc.distanceTo(mLastLocation) < Constants.Location.LOCATION_OUTLIER)) {
+                        if (mNumIgnores >= MAX_IGNORE_LOCATION_UPDATES || (loc.distanceTo(mLastLocation) > Constants.Location.MAP_RADIUS && loc.distanceTo(mLastLocation) < Constants.Location.MAP_OUTLIER)) {
                             Points p = new Points(UUID, loc.getLatitude(), loc.getLongitude(), loc.getTime());
                             p.save();
 
-                            //Log.v(TAG, "Location update from service: " + loc.toString());
                             points.add(loc);
                             redrawMap();
                             if(firstRun) {
@@ -348,7 +346,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                             mNumIgnores = 0;
                         } else {
-                            Log.v(TAG, "Location is either within " + Constants.Location.LOCATION_RADIUS + " OR outside " + Constants.Location.LOCATION_OUTLIER + " meters. Will be ignored.");
+                            Log.v(TAG, "Location is either within " + Constants.Location.LOCATION_RADIUS + " OR outside " + Constants.Location.MAP_OUTLIER + " meters. Will be ignored.");
                             Log.v(TAG, "Location has been ignored " + mNumIgnores + " times. After " + MAX_IGNORE_LOCATION_UPDATES + " times the location will be accepted");
                             mNumIgnores++;
                             removeLoadingText();

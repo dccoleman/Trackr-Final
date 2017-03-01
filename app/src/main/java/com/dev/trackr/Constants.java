@@ -10,8 +10,9 @@ public class Constants {
     }
 
     public static class Location {
-        public static final float LOCATION_RADIUS = 3;
-        public static final float LOCATION_OUTLIER = 10;
+        public static final float MAP_RADIUS = 3;
+        public static final float LOCATION_RADIUS = 10;
+        public static final float MAP_OUTLIER = 10;
     }
 
     public static class Intents {
